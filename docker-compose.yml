@@ -1,0 +1,58 @@
+version: '3'
+
+services:
+
+  # Nginx -----------------------------------------------
+  nginx:
+    build:
+      context: _docker/nginx
+      dockerfile: Dockerfile
+    container_name: "${PROJECT_NAME}_nginx"
+    volumes:
+      - ./:/var/www/html/
+      - ./_docker/nginx:/etc/nginx/conf.d/
+    ports:
+      - "80:80"
+
+  # PHP -----------------------------------------------
+  php:
+    build:
+      context: .
+      dockerfile: _docker/php/Dockerfile
+    volumes:
+      - ./:/var/www/html/
+    container_name: "${PROJECT_NAME}_php"
+    environment:
+      PHP_XDEBUG: 1
+      PHP_XDEBUG_MODE: profile,coverage,debug
+      PHP_IDE_CONFIG: serverName=my-ide
+      PHP_XDEBUG_IDEKEY: my-ide
+      PHP_XDEBUG_START_WITH_REQUEST: trigger
+      PHP_XDEBUG_TRIGGER_VALUE: my-ide
+      PHP_XDEBUG_CLIENT_HOST: 172.17.0.1 # Linux
+      PHP_XDEBUG_PROFILER_OUTPUT_NAME: "%t"
+      PHP_XDEBUG_LOG_LEVEL: 0
+
+    # Database -------------------------------------------------
+  db:
+    build:
+      context: _docker/postgres
+      dockerfile: Dockerfile
+    container_name: "${PROJECT_NAME}_pg"
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    volumes:
+      - ./database:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    logging:
+      driver: json-file
+      options:
+        max-size: "200m"
+        max-file: "3"
+
+  adminer:
+    image: adminer:latest
+    ports:
+      - '8888:8080'

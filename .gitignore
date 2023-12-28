@@ -1,0 +1,5 @@
+/.idea
+/web/vendor
+/database
+tags
+.phpunit.result.cache
